@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.17-alpine
+    container_name: archive-nginx
+    restart: unless-stopped
+    ports:
+      - 8080:80
+    volumes:
+      - ./backend/src:/var/www/laravel_docker
+      - ./backend/nginx:/etc/nginx/conf.d
+      - ./backend/log:/var/log/nginx
+    links:
+      - php-fpm
+    networks:
+      - others_my-net
+
+  php-fpm:
+    container_name: archive-php-fpm
+    build:
+      context: backend/php
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    working_dir: /var/www/laravel_docker
+    volumes:
+      - ./backend/src:/var/www/laravel_docker
+    networks:
+      - others_my-net
+      
+  mysql:
+    image: mysql:8
+    container_name: archive_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - equip-mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: my_base
+      MYSQL_PASSWORD: my_base
+    networks:
+      - others_my-net
+
+  nodejs:
+    image: node:18
+    container_name: archive_node_js
+    ports:
+      - 3001:3001
+    command: ["npm", "run", "dev"]
+    working_dir: /usr/src/app
+    volumes:
+      - ./frontend/src:/usr/src/app
+      
+  mailhog:
+    image: mailhog/mailhog
+    logging:
+      driver: 'none'
+    ports:
+      - 1025:1025
+      - 8030:8025
+    networks:
+      - others_my-net
+      
+networks:
+  others_my-net:
+    external: true
+    
+volumes:
+  equip-mysql-data:
+
+
